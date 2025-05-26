@@ -70,11 +70,15 @@
     mouse: mouse,
     constraint: {
       stiffness: 0.2,
+      angularStiffness: 0, // Allow rotation while dragging
       render: { visible: false }
     }
   });
   Composite.add(world, mouseConstraint);
   render.mouse = mouse;
+
+  // Ensure the canvas allows pointer events for mouse interaction
+  canvas.style.pointerEvents = 'auto';
 
   // Resize handling
   window.addEventListener('resize', () => {
