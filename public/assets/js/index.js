@@ -1,110 +1,98 @@
+    // Initial Canvas Script
 
-  const { Engine, Render, Runner, Bodies, Composite, Mouse, MouseConstraint } = Matter;
+    const { Engine, Render, Runner, Bodies, Composite, Events } = Matter;
 
-  const canvas = document.getElementById('world');
-  let width = window.innerWidth;
-  let height = window.innerHeight;
-  canvas.width = width;
-  canvas.height = height;
+    const canvas = document.getElementById('world');
+    let width = window.innerWidth;
+    let height = window.innerHeight;
+    canvas.width = width;
+    canvas.height = height;
 
-  const engine = Engine.create();
-  engine.gravity.y = 1.2;
-  const world = engine.world;
+    const engine = Engine.create();
+    engine.gravity.y = 1.2;
+    const world = engine.world;
 
-  const render = Render.create({
-    canvas: canvas,
-    engine: engine,
-    options: {
-      width: width,
-      height: height,
-      wireframes: false,
-      background: 'transparent'
-    }
-  });
+    const render = Render.create({
+      canvas: canvas,
+      engine: engine,
+      options: {
+        width: width,
+        height: height,
+        wireframes: false,
+        background: 'transparent'
+      }
+    });
 
-  Render.run(render);
-  const runner = Runner.create();
-  Runner.run(runner, engine);
+    Render.run(render);
+    const runner = Runner.create();
+    Runner.run(runner, engine);
 
-  const imageNaturalWidth = 250;
-  const imageNaturalHeight = 80;
-  const scale = 0.3;
-  const bodyWidth = imageNaturalWidth * scale;
-  const bodyHeight = imageNaturalHeight * scale;
+    const imageNaturalWidth = 250;
+    const imageNaturalHeight = 80;
+    const scale = 0.3;
+    const bodyWidth = imageNaturalWidth * scale;
+    const bodyHeight = imageNaturalHeight * scale;
 
-  // Ground at the very bottom
-  let ground = Bodies.rectangle(width / 2, height + 10, width, 20, {
-    isStatic: true,
-    render: { visible: false }
-  });
-  Composite.add(world, ground);
+    let currentItem = null;
 
-  // Spawn items in bulk once
-  function spawnItems(count = 200) {
-    for (let i = 0; i < count; i++) {
+    function spawnNewItem() {
+      // Ensure x keeps the entire item inside viewport horizontally
       const x = Math.random() * (width - bodyWidth) + bodyWidth / 2;
-      const y = -Math.random() * height; // spawn above the screen randomly
+      const y = -bodyHeight - 20;
 
       const item = Bodies.rectangle(x, y, bodyWidth, bodyHeight, {
-        restitution: 0.7,
-        frictionAir: 0.01,
+        restitution: 0.5,
+        frictionAir: 0.02,
         render: {
           sprite: {
             texture: '/assets/images/joint.svg',
             xScale: scale,
             yScale: scale
           }
-        }
+        },
+        isSensor: true
       });
 
       Composite.add(world, item);
+      currentItem = item;
     }
-  }
 
-  // Spawn all items once
-  spawnItems(200);
+    // Start with one item
+    spawnNewItem();
 
-  // Mouse drag/throw interaction
-  const mouse = Mouse.create(canvas);
-  const mouseConstraint = MouseConstraint.create(engine, {
-    mouse: mouse,
-    constraint: {
-      stiffness: 0.2,
-      angularStiffness: 0, // Allow rotation while dragging
-      render: { visible: false }
-    }
-  });
-  Composite.add(world, mouseConstraint);
-  render.mouse = mouse;
-
-  // Ensure the canvas allows pointer events for mouse interaction
-  canvas.style.pointerEvents = 'auto';
-
-  // Resize handling
-  window.addEventListener('resize', () => {
-    width = window.innerWidth;
-    height = window.innerHeight;
-    canvas.width = width;
-    canvas.height = height;
-    render.bounds.max.x = width;
-    render.bounds.max.y = height;
-    render.options.width = width;
-    render.options.height = height;
-
-    // Recreate ground at new height
-    Composite.remove(world, ground);
-    ground = Bodies.rectangle(width / 2, height + 10, width, 20, {
-      isStatic: true,
-      render: { visible: false }
+    // Check and spawn new one when current goes below screen
+    Events.on(engine, 'afterUpdate', () => {
+      if (currentItem && currentItem.position.y - bodyHeight > height) {
+        Composite.remove(world, currentItem);
+        spawnNewItem();
+      }
     });
-    Composite.add(world, ground);
-  });
 
-  // Pause physics when tab is inactive
-  document.addEventListener('visibilitychange', () => {
-    if (document.hidden) {
-      Runner.stop(runner);
-    } else {
-      Runner.start(runner, engine);
-    }
-  });
+    // Pause simulation when tab is inactive
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        Runner.stop(runner);
+      } else {
+        Runner.start(runner, engine);
+      }
+    });
+
+    // Resize support
+    window.addEventListener('resize', () => {
+      width = window.innerWidth;
+      height = window.innerHeight;
+      canvas.width = width;
+      canvas.height = height;
+      render.bounds.max.x = width;
+      render.bounds.max.y = height;
+      render.options.width = width;
+      render.options.height = height;
+    });
+    
+    
+    // ------------------------------------------------------------------------------------
+    
+    
+    // Second Canvas Script
+    
+    
